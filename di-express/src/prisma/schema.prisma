@@ -1,0 +1,51 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("SUPABASE_DATABASE_URL")
+}
+
+
+
+model Language {
+  Language String
+  Translations Translation[] @relation("OrginalLanguage")
+  Translated Translation[] @relation("LanguageTranslations")
+  @@id([Language])
+}
+
+
+model Translation {
+  Word String
+  Language String
+  TranslatedLanguage String
+  TranslatedWord String
+  language          Language @relation("OrginalLanguage", fields: [Language], references: [Language])
+  translatedLanguage Language @relation("LanguageTranslations", fields: [TranslatedLanguage], references: [Language])
+  @@id([Word, Language, TranslatedLanguage])
+}
+
+// model Language {
+//   Id String @id @default(cuid())
+//   Language String
+//   Words Word[]
+// }
+
+// model Word {
+//   Id String @id @default(cuid())
+//   Word String
+//   LanguageId String
+//   Language Language @relation(fields: [LanguageId], references: [Id])
+//   TranslationsAsOriginal Translation[] @relation("WordToTranslationAsOriginal")
+//   TranslationsAsTranslated Translation[] @relation("WordToTranslationAsTranslated")
+// }
+
+// model Translation {
+//   Id String @id @default(cuid())
+//   OriginalWordId String
+//   OriginalWord Word @relation("WordToTranslationAsOriginal", fields: [OriginalWordId], references: [Id])
+//   TranslatedWordId String
+//   TranslatedWord Word @relation("WordToTranslationAsTranslated", fields: [TranslatedWordId], references: [Id])
+// }
