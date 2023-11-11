@@ -1,10 +1,10 @@
 {
   "folders": [
     {
-      "path": "word-translation"
+      "path": "word-translation-backend"
     },
     {
-      "path": "di-express"
+      "path": "word-translation-frontend"
     }
   ],
   "settings": {}
