@@ -1,60 +1,59 @@
+import { useStorage } from "@plasmohq/storage/hook";
 import React, { useEffect, useState } from "react";
+
 
 function IndexPopup() {
 
-  const [languages, setLanguages] = useState(["english", "arabic", "amharic"])
-  const [language, setLanguage] = useState({ WordLanguage: "english", TranslatedLanguage: "english" })
+  const [languages, setLanguages] = useState(["english"])
   const [Word, setWord] = useState("")
   const [TranslatedWord, setTranslatedWord] = useState("Enter word to translate")
+  const [WordLanguage, setWordLanguage] = useStorage("WordLanguage",
+    (prev) => prev ? prev : "english")
+  const [TranslatedLanguage, setTranslatedLanguage] = useStorage("TranslatedWordLanguage", (prev) => prev ? prev : "english")
 
 
-  useEffect(() => {
-    chrome.storage.local.get(["WordLanguage", "TranslatedLanguage"])
-      .then((result) => {
-        if (!result[0]) result[0] = "english"
-        if (!result[1]) result[1] = "english"
-        setLanguage({ ...language, ...result })
-      })
-  }, [])
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        console.log("fetching");
+        setTranslatedWord("We are Loading the languages...");
         const res = await fetch(`${process.env.PLASMO_PUBLIC_BASE_URL}/Language`);
         const data = await res.json();
-        const newLanguages = data.map((element) => element.language);
-        setLanguages(newLanguages);
-        console.log(data);
+        if (data.success) {
+          const newLanguages = data.message.map((element) => element.Language);
+          setLanguages(newLanguages);
+          setTranslatedWord("Enter word to translate");
+        } else {
+          setTranslatedWord("No available Language at the Time");
+        }
       } catch (error) {
-        console.error("Error fetching data:", error);
-        // Handle errors as needed
+        setTranslatedWord(`Error fetching data Available Languages try Again !`);
       }
     }
+    fetchData();
   }, []);
 
-  console.log("======================================")
 
   const handleChangeLanguage = (e) => {
     const { id, value } = e.target
-    setLanguage({ ...language, [id]: value })
-    chrome.storage.local.set({ [id]: value })
+    if (id === "WordLanguage") setWordLanguage(value)
+    else setTranslatedLanguage(value)
   }
 
   const handleTranslate = async () => {
     try {
-
+      setTranslatedWord("Loading...")
       const res = await fetch(
-        `${process.env.PLASMO_PUBLIC_BASE_URL}/Translate?Word=${Word}&WordLanguage=${language.WordLanguage}&TranslatedLanguage=${language.TranslatedLanguage}`
+        `${process.env.PLASMO_PUBLIC_BASE_URL}/Translation?Word=${Word}&Language=${WordLanguage}&TranslatedLanguage=${TranslatedLanguage}`
       );
       const data = await res.json()
-      if (data.success & data.success.message) {
-        setTranslatedWord(data.success.message.TranslatedWord)
+      if (data.success && data.message) {
+        setTranslatedWord(data.message.TranslatedWord)
       } else {
         setTranslatedWord("No translation Yet!")
       }
     } catch (err) {
-      setTranslatedWord("Error occured! try Again")
+      setTranslatedWord(err.message)
     }
   }
 
@@ -65,7 +64,7 @@ function IndexPopup() {
       <div>
         <label>From: </label>
         <br />
-        <select value={language.WordLanguage} id="WordLanguage" onChange={handleChangeLanguage}>
+        <select value={WordLanguage} id="WordLanguage" onChange={handleChangeLanguage}>
           {languages.map((lang) => (
             <option key={lang} value={lang}>
               {lang}
@@ -76,7 +75,7 @@ function IndexPopup() {
       <div >
         <label>To: </label>
         <br />
-        <select value={language.TranslatedLanguage} id="TranslatedLanguage" onChange={handleChangeLanguage}>
+        <select value={TranslatedLanguage} id="TranslatedLanguage" onChange={handleChangeLanguage}>
           {languages.map((lang) => (
             <option key={lang} value={lang}>
               {lang}
@@ -88,7 +87,7 @@ function IndexPopup() {
         <input type="text" value={Word} onChange={(e) => setWord(e.target.value)} />
         <button onClick={handleTranslate}>Translate</button>
       </div>
-      <h2>
+      <h2 style={{ wordBreak: "break-word" }}>
         {TranslatedWord}
       </h2>
     </div>
